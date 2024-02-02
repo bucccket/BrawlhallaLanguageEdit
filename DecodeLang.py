@@ -3,50 +3,60 @@ import io
 import codecs
 
 class UTF8String:
+    
+    #ctor
+    def __init__(self, length, string):
+        self.length = length
+        self.string = string
+        
+    #static class methods    
     @classmethod
     def FromBytesIO(cls, data):
         length = cls.__ReadUint16BE(data)
         string = data.read(length).decode('utf-8')
         return cls(length, string)
     
+    @classmethod
+    def FromString(cls, string):
+        return cls(len(string), string)    
+    
+    #public
     def WriteBytesIO(self, data):
         data.write(self.length.to_bytes(2, byteorder="big"))
         data.write(self.string.encode('utf-8'))
-    
-    @classmethod
-    def FromString(cls, string):
-        return cls(len(string), string)
-    
-    def __init__(self, length, string):
-        self.length = length
-        self.string = string
-
+        
+    #private
     def __ReadUint16BE(data):
         byte = data.read(2)
         return int.from_bytes(byte, byteorder="big")  # whar?
 
 class Entry:
-    @classmethod
-    def FromBytesIO(cls, data):
-        return cls(UTF8String.FromBytesIO(data), UTF8String.FromBytesIO(data))
     
+    #ctor
+    def __init__(self, key, value):
+        self.key = key
+        self.value = value
+    
+    #public
     def WriteBytesIO(self, data):
         self.key.WriteBytesIO(data)
         self.value.WriteBytesIO(data)
         
     def SetValue(self, value):
         self.value = UTF8String.FromString(value)
+        
+    #static class methods
+    @classmethod
+    def FromBytesIO(cls, data):
+        return cls(UTF8String.FromBytesIO(data), UTF8String.FromBytesIO(data))
     
     @classmethod
     def FromKeyValuePair(cls, key, value):
         return cls(UTF8String.FromString(key), UTF8String.FromString(value))
     
-    def __init__(self, key, value):
-        self.key = key
-        self.value = value
-
 class LangFile:
 
+    #ctor
     def __init__(self, filename):
         fd = open(filename, "rb")
 
@@ -57,21 +67,7 @@ class LangFile:
 
         self.__ParseFile()
 
-    def __ParseFile(self):
-        self.data = io.BytesIO(zlib.decompress(self.zlibdata))
-        self.entry_count = self.__ReadUint32BE(self.data)
-
-        while len(self.entries) < self.entry_count:
-            self.entries.append(Entry.FromBytesIO(self.data))
-        pass
-
-    def __ReadUint32BE(self, data):
-        byte = data.read(4)
-        return int.from_bytes(byte, byteorder="big")  # whar?
-    
-    def __WriteUint32BE(self, number):
-        return number.to_bytes(4, byteorder="big")
-    
+    #public 
     def Save(self, filename):
         
         data = io.BytesIO()
@@ -90,6 +86,23 @@ class LangFile:
             for entry in self.entries:
                 fd.write(f"{entry.key.string}={entry.value.string}\n")
 
+    #private
+    def __ParseFile(self):
+        self.data = io.BytesIO(zlib.decompress(self.zlibdata))
+        self.entry_count = self.__ReadUint32BE(self.data)
+
+        while len(self.entries) < self.entry_count:
+            self.entries.append(Entry.FromBytesIO(self.data))
+        pass
+
+    def __ReadUint32BE(self, data):
+        byte = data.read(4)
+        return int.from_bytes(byte, byteorder="big")  # whar?
+    
+    def __WriteUint32BE(self, number):
+        return number.to_bytes(4, byteorder="big")
+    
+    #overrides
     def __setitem__(self, key, value):
         for entry in self.entries:
             if entry.key.string == key:
