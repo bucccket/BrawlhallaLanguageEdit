@@ -17,3 +17,17 @@ if __name__ == "__main__":
     langfile.Save("language.1.bin.edit") # save file
     langfile.Dump("language.1.dump")
 ```
+
+## Documentation
+
+### LangFile( filepath )
+
+Opens language.#.bin file and parses it
+
+### Save( filepath )
+
+Saves LangFile to path specified
+
+### Dump( filepath )
+
+Dumps file contents encoded as UTF8 strings as KVP
