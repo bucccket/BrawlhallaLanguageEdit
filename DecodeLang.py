@@ -1,5 +1,6 @@
 import zlib
 import io
+import codecs
 
 class UTF8String:
     @classmethod
@@ -7,6 +8,10 @@ class UTF8String:
         length = cls.__ReadUint16BE(data)
         string = data.read(length).decode('utf-8')
         return cls(length, string)
+    
+    def WriteBytesIO(self, data):
+        data.write(self.length.to_bytes(2, byteorder="big"))
+        data.write(self.string.encode('utf-8'))
     
     @classmethod
     def FromString(cls, string):
@@ -24,6 +29,13 @@ class Entry:
     @classmethod
     def FromBytesIO(cls, data):
         return cls(UTF8String.FromBytesIO(data), UTF8String.FromBytesIO(data))
+    
+    def WriteBytesIO(self, data):
+        self.key.WriteBytesIO(data)
+        self.value.WriteBytesIO(data)
+        
+    def SetValue(self, value):
+        self.value = UTF8String.FromString(value)
     
     @classmethod
     def FromKeyValuePair(cls, key, value):
@@ -56,11 +68,32 @@ class LangFile:
     def __ReadUint32BE(self, data):
         byte = data.read(4)
         return int.from_bytes(byte, byteorder="big")  # whar?
+    
+    def __WriteUint32BE(self, number):
+        return number.to_bytes(4, byteorder="big")
+    
+    def Save(self, filename):
+        
+        data = io.BytesIO()
+        data.write(self.__WriteUint32BE(self.entry_count))
+        for entry in self.entries:
+            entry.WriteBytesIO(data)       
+        
+        with open(filename, "wb") as fd:
+            self.inflated_size = data.getbuffer().nbytes
+            fd.write(self.inflated_size.to_bytes(4, byteorder="little"))
+            self.zlibdata = zlib.compress(data.getbuffer())
+            fd.write(self.zlibdata)
+        
+    def Dump(self, filename):
+        with codecs.open(filename, "w", "utf-8") as fd:
+            for entry in self.entries:
+                fd.write(f"{entry.key.string}={entry.value.string}\n")
 
     def __setitem__(self, key, value):
         for entry in self.entries:
             if entry.key.string == key:
-                entry.value.string = value
+                entry.SetValue(value)
                 return
         self.entries.append(Entry.FromKeyValuePair(key, value))
         self.entry_count += 1
@@ -72,7 +105,9 @@ class LangFile:
         return None
 
 if __name__ == "__main__":
-    langfile = LangFile("language.1.bin")
-    langfile["test"] = "test"
-    print(langfile['MirageColorSchemeType_Black_DisplayName'])
+    langfile = LangFile("language.1.bin.og") # open file
+    langfile["test"] = "test" # create new entry
+    langfile["UI_PHASE_DESCRIPTION_SUCCESS_NONE"] = "Launched your mom into space" # change existing entry
+    print(langfile['MirageColorSchemeType_Black_DisplayName']) # read entry
+    langfile.Save("language.1.bin") # save file
     pass
