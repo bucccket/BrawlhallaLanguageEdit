@@ -9,6 +9,8 @@ To use it just construct a new **LangFile** object. You can treat the object lik
 ### Example
 
 ```py
+from DecodeLang import LangFile
+
 if __name__ == "__main__":
     langfile = LangFile("language.1.bin") # open file
     langfile["test"] = "test" # create new entry
