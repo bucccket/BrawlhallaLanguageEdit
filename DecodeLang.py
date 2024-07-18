@@ -101,7 +101,6 @@ class LangFile:
             regex = re.compile(r"((?:.*_).*)=(.*(?:[^=]*\n)*)")
             matches = regex.findall(data)
             for match in matches:
-                print(match)
                 self[match[0]] = match[1]
 
     # private

@@ -47,3 +47,7 @@ Saves LangFile to path specified
 ### Dump( filepath )
 
 Dumps file contents encoded as UTF8 strings as KVP
+
+### FromTextFileFro( filepath )
+
+Loads a textfile that is delimited with an = like in the example above
