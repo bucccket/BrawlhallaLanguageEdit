@@ -4,6 +4,16 @@ import zlib
 import io
 import codecs
 
+class ByteReader:
+    @staticmethod
+    def ReadUint32BE(data: io.BytesIO) -> int:
+        byte = data.read(4)
+        return int.from_bytes(byte, byteorder="big")
+
+    @staticmethod
+    def ReadUint16BE(data: io.BytesIO) -> int:
+        byte = data.read(2)
+        return int.from_bytes(byte, byteorder="big")
 
 class UTF8String:
 
@@ -15,7 +25,7 @@ class UTF8String:
     # static class methods
     @classmethod
     def FromBytesIO(cls, data: io.BytesIO) -> Any:
-        length = cls.__ReadUint16BE(data)
+        length = ByteReader.ReadUint16BE(data)
         string = data.read(length).decode('utf-8')
         return cls(length, string)
 
@@ -27,11 +37,6 @@ class UTF8String:
     def WriteBytesIO(self, data: io.BytesIO) -> None:
         data.write(self.length.to_bytes(2, byteorder="big"))
         data.write(self.string.encode('utf-8'))
-
-    # private
-    def __ReadUint16BE(data: io.BytesIO) -> int:
-        byte = data.read(2)
-        return int.from_bytes(byte, byteorder="big")  # whar?
 
 
 class Entry:
@@ -105,14 +110,10 @@ class LangFile:
     # private
     def __ParseFile(self) -> None:
         self.data: io.BytesIO = io.BytesIO(zlib.decompress(self.zlibdata))
-        self.entry_count: int = self.__ReadUint32BE(self.data)
+        self.entry_count: int = ByteReader.ReadUint32BE(self.data)
 
         while len(self.entries) < self.entry_count:
             self.entries.append(Entry.FromBytesIO(self.data))
-
-    def __ReadUint32BE(self, data: io.BytesIO) -> int:
-        byte = data.read(4)
-        return int.from_bytes(byte, byteorder="big")  # whar?
 
     def __WriteUint32BE(self, number: int) -> bytes:
         return number.to_bytes(4, byteorder="big")
