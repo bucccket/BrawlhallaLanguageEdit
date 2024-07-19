@@ -48,6 +48,6 @@ Saves LangFile to path specified
 
 Dumps file contents encoded as UTF8 strings as KVP
 
-### FromTextFileFro( filepath )
+### FromTextFile( filepath )
 
 Loads a textfile that is delimited with an = like in the example above

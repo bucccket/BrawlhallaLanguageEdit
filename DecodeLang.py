@@ -16,13 +16,12 @@ class UTF8String:
     @classmethod
     def FromBytesIO(cls, data: io.BytesIO) -> Any:
         length = cls.__ReadUint16BE(data)
-        res = data.read(length)
-        string = res.decode('utf-8')
+        string = data.read(length).decode('utf-8')
         return cls(length, string)
 
     @classmethod
     def FromString(cls, string: str) -> Any:
-        return cls(len(string), string)
+        return cls(len(string.encode('utf-8')), string)
 
     # public
     def WriteBytesIO(self, data: io.BytesIO) -> None:
@@ -38,7 +37,7 @@ class UTF8String:
 class Entry:
 
     # ctor
-    def __init__(self, key: str, value: str):
+    def __init__(self, key: UTF8String, value: UTF8String):
         self.key: UTF8String = key
         self.value: UTF8String = value
 
